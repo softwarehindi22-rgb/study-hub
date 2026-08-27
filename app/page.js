@@ -9,6 +9,7 @@ export default function HomePage() {
   const [courses, setCourses] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -18,12 +19,16 @@ export default function HomePage() {
         return;
       }
 
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+      }
       setProfile(profileData);
+      setDebugInfo({ userId: user.id, profileData, profileError });
 
       const { data: courseData } = await supabase
         .from("courses")
@@ -62,6 +67,11 @@ export default function HomePage() {
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
+        {debugInfo && (
+          <pre className="text-xs bg-yellow-50 border border-yellow-300 rounded-lg p-3 mb-4 overflow-auto">
+            {JSON.stringify(debugInfo, null, 2)}
+          </pre>
+        )}
         <h2 className="text-lg font-semibold text-ink mb-4">Your Courses</h2>
         {courses.length === 0 ? (
           <p className="text-gray-400 text-sm">No courses published yet.</p>
@@ -84,4 +94,4 @@ export default function HomePage() {
       </main>
     </div>
   );
-    }
+}
